@@ -251,15 +251,18 @@ function showInvoiceScreen(){
   const items=o.items.filter(it=>it.packedQty>0);
   
   document.getElementById('invoice-table').innerHTML=`
-    <thead><tr><th>Item</th><th class="c">Size</th><th class="c">Cases</th><th class="r">Price/Case</th><th class="r">Total</th></tr></thead>
+    <thead><tr><th>Item</th><th>Category</th><th class="c">Size</th><th class="r">B.Deposit</th><th class="c">Cases</th><th class="r">Price/Case</th><th class="r">Total</th></tr></thead>
     <tbody>${items.map((it,i)=>{
       const price=findPrice(it.name,it.size);
+      const category=findCategory(it.name,it.size);
       return `
         <tr>
           <td>${it.name}</td>
+          <td>${category}</td>
           <td class="c">${it.size}</td>
+          <td class="r"><input class="price" type="number" step="0.01" min="0" value="0.00" data-idx="${i}" data-type="deposit" oninput="updateInvoice()"/></td>
           <td class="c">${it.packedQty}</td>
-          <td class="r"><input class="price" type="number" step="0.01" min="0" value="${price.toFixed(2)}" data-idx="${i}" oninput="updateInvoice()"/></td>
+          <td class="r"><input class="price" type="number" step="0.01" min="0" value="${price.toFixed(2)}" data-idx="${i}" data-type="price" oninput="updateInvoice()"/></td>
           <td class="r" id="line-${i}">$${(price*it.packedQty).toFixed(2)}</td>
         </tr>
       `;
@@ -278,23 +281,40 @@ function findPrice(name,size){
   return 0;
 }
 
+function findCategory(name,size){
+  for(let cat in catalog){
+    const item=catalog[cat].find(x=>x[0]===name&&x[1]===size);
+    if(item) return cat;
+  }
+  return '';
+}
+
 function updateInvoice(){
   let subtotal=0;
+  let totalDeposit=0;
+  
   document.querySelectorAll('#invoice-table tbody tr').forEach((row,i)=>{
-    const qty=parseInt(row.cells[2].textContent);
-    const priceInput=row.querySelector('input.price');
+    const qty=parseInt(row.cells[4].textContent);
+    const depositInput=row.querySelector('input[data-type="deposit"]');
+    const priceInput=row.querySelector('input[data-type="price"]');
+    
+    const deposit=parseFloat(depositInput.value)||0;
     const price=parseFloat(priceInput.value)||0;
-    const total=qty*price;
-    document.getElementById('line-'+i).textContent='$'+total.toFixed(2);
-    subtotal+=total;
+    
+    const lineTotal=qty*price;
+    document.getElementById('line-'+i).textContent='$'+lineTotal.toFixed(2);
+    
+    subtotal+=lineTotal;
+    totalDeposit+=(deposit*qty);
   });
   
   const gst=subtotal*0.05;
-  const total=subtotal+gst;
+  const total=subtotal+gst+totalDeposit;
   
   document.getElementById('invoice-totals').innerHTML=`
     <p><span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span></p>
     <p><span>GST (5%):</span><span>$${gst.toFixed(2)}</span></p>
+    <p><span>B.Deposit:</span><span>$${totalDeposit.toFixed(2)}</span></p>
     <p><span>Total:</span><span>$${total.toFixed(2)}</span></p>
   `;
 }
