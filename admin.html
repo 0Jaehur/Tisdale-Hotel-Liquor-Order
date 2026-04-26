@@ -81,8 +81,10 @@ input:focus{outline:none;border-color:var(--gold);}
 @media print{
   .site-header,.btn-group,.btn,.section-title{display:none!important;}
   .screen{padding:0;}
+  .screen:not(.active){display:none!important;}
   body{background:white;}
   .invoice-header,.invoice-footer{border:none!important;}
+  .info-box{border:none!important;padding:0 0 1rem 0;}
 }
 </style>
 </head>
@@ -121,6 +123,7 @@ input:focus{outline:none;border-color:var(--gold);}
     <table id="packing-table"></table>
     <div class="btn-group">
       <button class="btn btn-gold" onclick="finishPacking()">Continue to Invoice →</button>
+      <button class="btn btn-primary" onclick="printPacking()">🖨 Print Packing List</button>
       <button class="btn btn-secondary" onclick="showScreen('orders')">← Back to Orders</button>
     </div>
   </div>
@@ -252,6 +255,15 @@ function showPackingScreen(){
   
   packingData={...o,items};
   showScreen('packing');
+}
+
+function printPacking(){
+  // Collect current packed quantities before printing
+  document.querySelectorAll('#packing-table input').forEach(inp=>{
+    const idx=parseInt(inp.dataset.idx);
+    packingData.items[idx].packedQty=parseInt(inp.value)||0;
+  });
+  window.print();
 }
 
 function finishPacking(){
